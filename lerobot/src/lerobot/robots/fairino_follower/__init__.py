@@ -16,3 +16,5 @@
 
 from .config_fairino_follower import FairinoFollowerConfig
 from .fairino_follower import FairinoFollower
+
+__all__ = ["FairinoFollower", "FairinoFollowerConfig"]

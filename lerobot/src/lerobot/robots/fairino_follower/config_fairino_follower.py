@@ -15,17 +15,22 @@
 # limitations under the License.
 
 from dataclasses import dataclass
-from pathlib import Path
 
 from ..config import RobotConfig
 
 
-@RobotConfig.register_subclass("fairino_follower")
-@dataclass
+@dataclass(kw_only=True)
 class FairinoFollowerConfig(RobotConfig):
     """Configuration for the Fairino follower robot."""
-
+    # IP address of the Fairino controller; this field is required and therefore
+    # deliberately placed before fields with defaults. The previous version
+    # declared a default value which triggered a ``TypeError`` during the
+    # dataclass initialization because non-default arguments were defined after
+    # defaulted ones in the parent class. Making ``controller_ip`` a required
+    # keyword-only argument resolves the issue and ensures users explicitly
+    # specify the target controller.
     controller_ip: str
-    velocity_limit: float = 50.0
-    acceleration_limit: float = 50.0
-    calibration_dir: Path | None = None
+
+    # Motion parameters for joint moves expressed in degrees per second.
+    velocity: float = 30.0
+    acceleration: float = 30.0
