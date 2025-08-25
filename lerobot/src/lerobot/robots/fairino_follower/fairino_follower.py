@@ -78,15 +78,18 @@ class FairinoFollower(Robot):
     def send_action(self, action: dict[str, Any]) -> dict[str, Any]:
         if not self.is_connected:
             raise DeviceNotConnectedError(f"{self} is not connected.")
+        joints = action.get("joint_position", action.get("joint_positions"))
+        if joints is None:
+            raise KeyError("joint_position")
+        q = np.asarray(joints, dtype=float)
 
-        q = np.asarray(action["joint_position"], dtype=float)
         self.sdk_robot.ServoJ(q.tolist(), [0, 0, 0, 0])
         return {"joint_position": q}
 
     def disconnect(self) -> None:  # pragma: no cover - network/hardware
         if not self.is_connected:
             raise DeviceNotConnectedError(f"{self} is not connected.")
-        self.sdk_robot.close()
+        self.sdk_robot.CloseRPC()
         self.sdk_robot = None
 
 

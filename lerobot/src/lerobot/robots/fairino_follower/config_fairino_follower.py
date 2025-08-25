@@ -15,6 +15,7 @@
 # limitations under the License.
 
 from dataclasses import dataclass
+from pathlib import Path
 
 from ..config import RobotConfig
 
@@ -24,5 +25,7 @@ from ..config import RobotConfig
 class FairinoFollowerConfig(RobotConfig):
     """Configuration for the Fairino follower robot."""
 
-    ip: str
-    name: str = "fairino_follower"
+    controller_ip: str
+    velocity_limit: float = 50.0
+    acceleration_limit: float = 50.0
+    calibration_dir: Path | None = None
