@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from ..config import RobotConfig
 
 
+@RobotConfig.register_subclass("fairino_follower")
 @dataclass(kw_only=True)
 class FairinoFollowerConfig(RobotConfig):
     """Configuration for the Fairino follower robot."""
