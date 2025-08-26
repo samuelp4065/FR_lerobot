@@ -152,15 +152,50 @@ class FairinoFollower(Robot):
             "elbow_flex.pos": "joint_3",
             "wrist_flex.pos": "joint_4",
             "wrist_roll.pos": "joint_5",
+            "gripper.pos": "joint_6",
         }
 
         missing = [k for k in LEADER_TO_FR5 if k not in action]
         if missing:
             raise KeyError(f"Missing leader joint keys: {missing}")
 
-        q: List[float] = [float(action[src]) for src in LEADER_TO_FR5]
-        q.append(float(action.get("gripper.pos", 0.0)))
-        q.append(0.0)
+        joint_position: List[float] = [self.config.joint_7_default] * len(JOINT_NAMES)
+        for leader_key, joint_name in LEADER_TO_FR5.items():
+            idx = JOINT_NAMES.index(joint_name)
+            joint_position[idx] = float(action[leader_key])
 
-        self.sdk_robot.MoveJ(joint_pos=q, tool=0, user=0, vel=self.config.velocity)
-        return {f"{j}.pos": q[i] for i, j in enumerate(JOINT_NAMES)}
+        self.sdk_robot.MoveJ(joint_pos=joint_position, tool=0, user=0, vel=self.config.velocity)
+        return {f"{j}.pos": joint_position[i] for i, j in enumerate(JOINT_NAMES)}
+    
+    def _so101_value_to_deg(self, key: str, v: float) -> float:
+        """
+        SO101 리더에서 오는 값이 '도'인지 '틱(0~4095 등)'인지 자동 판별하고 도(deg)로 변환.
+        - |v| <= 720이면 도로 간주
+        - 크면 틱으로 간주하고 ticks -> degrees 선형 변환
+        """
+        x = float(v)
+        # 이미 '도'로 보임
+        if -720.0 <= x <= 720.0:
+            return x
+
+        # 틱으로 간주: config에 범위 있으면 사용, 없으면 기본(0~4095, offset=0)
+        # 키는 "shoulder_pan.pos" 형태를 그대로 사용
+        ranges = getattr(self.config, "so101_ticks_ranges", {})
+        rng = ranges.get(key, {})
+        rmin = float(rng.get("range_min", 0.0))
+        rmax = float(rng.get("range_max", 4095.0))
+        offset = float(rng.get("homing_offset", 0.0))  # 영점 보정(도)
+
+        span = max(1.0, (rmax - rmin))
+        mid = 0.5 * (rmin + rmax)
+        # ticks를 중간값 기준 ±180°로 매핑 + 오프셋
+        deg = (x - mid) * (360.0 / span) + offset
+        return deg
+
+    def _clamp_safe(self, vec: list[float]) -> list[float]:
+        """관절별 보수적 안전 리미트로 클램프(필요시 조정). FR5 6축 가정."""
+        dof = self._target_len()
+        # 축별 안전 범위(보수적으로 시작; 필요시 늘리세요)
+        SAFE_MIN = [-170.0, -90.0, -90.0, -90.0, -170.0, -90.0][:dof]
+        SAFE_MAX = [ 170.0,  90.0,  90.0,  90.0,  170.0,  90.0][:dof]
+        return [max(SAFE_MIN[i], min(SAFE_MAX[i], vec[i])) for i in range(dof)]
