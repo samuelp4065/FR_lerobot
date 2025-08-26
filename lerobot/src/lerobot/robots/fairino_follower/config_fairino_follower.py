@@ -35,3 +35,4 @@ class FairinoFollowerConfig(RobotConfig):
     # Motion parameters for joint moves expressed in degrees per second.
     velocity: float = 30.0
     acceleration: float = 30.0
+    joint_7_default: float = 0.0
