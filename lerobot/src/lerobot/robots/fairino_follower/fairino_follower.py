@@ -146,26 +146,14 @@ class FairinoFollower(Robot):
     def send_action(self, action: Dict[str, Any]) -> Dict[str, Any]:
         if self.sdk_robot is None:
             raise DeviceNotConnectedError(f"{self} is not connected.")
-        LEADER_TO_FR5 = {
-            "shoulder_pan.pos": "joint_1",
-            "shoulder_lift.pos": "joint_2",
-            "elbow_flex.pos": "joint_3",
-            "wrist_flex.pos": "joint_4",
-            "wrist_roll.pos": "joint_5",
-            "gripper.pos": "joint_6",
-        }
-
-        missing = [k for k in LEADER_TO_FR5 if k not in action]
-        if missing:
-            raise KeyError(f"Missing leader joint keys: {missing}")
-
-        joint_position: List[float] = [self.config.joint_7_default] * len(JOINT_NAMES)
-        for leader_key, joint_name in LEADER_TO_FR5.items():
-            idx = JOINT_NAMES.index(joint_name)
-            joint_position[idx] = float(action[leader_key])
-
-        self.sdk_robot.MoveJ(joint_pos=joint_position, tool=0, user=0, vel=self.config.velocity)
-        return {f"{j}.pos": joint_position[i] for i, j in enumerate(JOINT_NAMES)}
+        joint_position = self._parse_action_to_joint_vector(action)
+        self.sdk_robot.MoveJ(
+            joint_pos=joint_position,
+            tool=0,
+            user=0,
+            vel=self.config.velocity,
+        )
+        return self.get_observation()
     
     def _so101_value_to_deg(self, key: str, v: float) -> float:
         """
