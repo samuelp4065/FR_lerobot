@@ -4,11 +4,12 @@
    ```conda activate ADROIT```
 3. 깃 클론 하기
    ```git clone https://github.com/samuelp4065/FR_lerobot.git && cd FR_lerobot```
-4. lerobot &    
+4. lerobot 다운 받기
+   ```cd /lerobot && pip install -e .```
+5. 
 
-5. 르로봇 포트 사용 허가 해주기
-   ``` sudo usermod -a -G dialout $USER
-       sudo chmod 666 /dev/ttyACM*```
+6. 르로봇 포트 사용 허가 해주기
+   ``` sudo usermod -a -G dialout $USER && sudo chmod 666 /dev/ttyACM*```
 #. teleoperation 실행
   ```cd /FR_lerobot/lerobot```
 ```
